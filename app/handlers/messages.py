@@ -8,6 +8,8 @@ from app.config import config
 from app.states import MessageState
 from app.utils.message_map import add_mapping, get_mapping
 from app.utils.admin_log import store_reveal, get_reveal, remove_reveal
+from app.utils.ratelimit import rate_limiter
+from app.utils.stats import record_message
 from app.keyboards.main import get_reveal_keyboard
 
 router = Router()
@@ -52,6 +54,13 @@ def _build_full_log(label: str, text: str, sender: dict, recipient: dict) -> str
 
 @router.message(MessageState.waiting_for_message)
 async def handle_anonymous_message(message: Message, state: FSMContext):
+    allowed, remaining = rate_limiter.check(message.from_user.id)
+    if not allowed:
+        await message.answer(
+            f"⏳ Слишком много сообщений. Попробуй снова через {remaining} сек."
+        )
+        return
+
     data = await state.get_data()
     recipient_id = data.get("recipient_id")
 
@@ -95,6 +104,7 @@ async def handle_anonymous_message(message: Message, state: FSMContext):
             reply_markup=get_reveal_keyboard(admin_msg.message_id),
         )
 
+        record_message()
         await message.answer("✅ Сообщение успешно отправлено.")
     except Exception as e:
         logger.error(f"Error sending anonymous message: {e}")
@@ -108,6 +118,13 @@ async def handle_anonymous_message(message: Message, state: FSMContext):
 
 @router.message(F.reply_to_message, F.text)
 async def handle_reply(message: Message):
+    allowed, remaining = rate_limiter.check(message.from_user.id)
+    if not allowed:
+        await message.answer(
+            f"⏳ Слишком много сообщений. Попробуй снова через {remaining} сек."
+        )
+        return
+
     replied = message.reply_to_message
     key = (message.chat.id, replied.message_id)
     other_party_id = get_mapping(*key)
@@ -150,6 +167,7 @@ async def handle_reply(message: Message):
             reply_markup=get_reveal_keyboard(admin_msg.message_id),
         )
 
+        record_message()
         await message.answer("✅ Ответ отправлен.")
     except Exception as e:
         logger.error(f"Error forwarding reply: {e}")

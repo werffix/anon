@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from app.config import config
 from app.handlers.start import router as start_router
 from app.handlers.messages import router as message_router
+from app.handlers.commands import router as commands_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +22,7 @@ async def main():
 
     dp.include_router(start_router)
     dp.include_router(message_router)
+    dp.include_router(commands_router)
 
     logger.info("Bot started polling")
     await dp.start_polling(bot)
