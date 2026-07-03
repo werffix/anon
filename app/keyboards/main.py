@@ -1,6 +1,6 @@
 import urllib.parse
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CopyTextButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -14,8 +14,22 @@ def get_main_keyboard(bot_username: str, user_id: int) -> InlineKeyboardMarkup:
 
     builder = InlineKeyboardBuilder()
     builder.add(
-        InlineKeyboardButton(text="📋 Скопировать ссылку", callback_data=f"copy_link:{user_id}"),
+        InlineKeyboardButton(
+            text="📋 Скопировать ссылку",
+            copy_text=CopyTextButton(text=link),
+        ),
         InlineKeyboardButton(text="📤 Поделиться ссылкой", url=share_url),
     )
     builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_reveal_keyboard(admin_message_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.add(
+        InlineKeyboardButton(
+            text="👤 Узнать отправителя",
+            callback_data=f"reveal_sender:{admin_message_id}",
+        ),
+    )
     return builder.as_markup()

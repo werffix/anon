@@ -1,9 +1,9 @@
 import logging
 
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 
 from app.states import MessageState
 from app.keyboards.main import get_main_keyboard
@@ -42,20 +42,3 @@ async def start_command(message: Message, command: CommandObject, state: FSMCont
         reply_markup=get_main_keyboard(bot_username, user_id),
         disable_web_page_preview=True,
     )
-
-
-@router.callback_query(F.data.startswith("copy_link:"))
-async def copy_link_callback(callback: CallbackQuery):
-    try:
-        user_id = int(callback.data.split(":", 1)[1])
-        bot_username = (await callback.bot.me()).username
-        link = f"https://t.me/{bot_username}?start={user_id}"
-
-        await callback.message.answer(
-            f"🔗 Ваша ссылка:\n\n{link}\n\n"
-            f"Нажмите и удерживайте сообщение, чтобы скопировать."
-        )
-    except Exception as e:
-        logger.error(f"Error in copy_link callback: {e}")
-    finally:
-        await callback.answer()
